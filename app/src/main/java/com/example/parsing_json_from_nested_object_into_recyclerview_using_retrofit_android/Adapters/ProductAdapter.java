@@ -26,6 +26,11 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         this.recyclerViewInterface = recyclerViewInterface;
     }
 
+    public void setFilterList(List<Product> filterlist) {
+        productList = filterlist;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public ProductAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

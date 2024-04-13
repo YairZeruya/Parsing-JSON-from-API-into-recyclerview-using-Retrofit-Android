@@ -6,14 +6,21 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.example.parsing_json_from_nested_object_into_recyclerview_using_retrofit_android.Interfaces.ProductAPI;
 import com.example.parsing_json_from_nested_object_into_recyclerview_using_retrofit_android.Interfaces.RecyclerViewInterface;
 import com.example.parsing_json_from_nested_object_into_recyclerview_using_retrofit_android.Model.Product;
 import com.example.parsing_json_from_nested_object_into_recyclerview_using_retrofit_android.Adapters.ProductAdapter;
 import com.example.parsing_json_from_nested_object_into_recyclerview_using_retrofit_android.R;
+import androidx.appcompat.widget.SearchView;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import retrofit2.Call;
@@ -27,7 +34,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewInter
     private List<Product> productList;
     private RecyclerView recyclerView;
     private Retrofit retrofit;
-
+    private ProductAdapter productAdapter;
+    private SearchView searchView;
     public static final String DESCRIPTION = "description_details";
     public static final String URL = "image_details";
     public static final String PRICE = "price_details";
@@ -38,10 +46,49 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewInter
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         productList = new ArrayList<>();
-        recyclerView = findViewById(R.id.recycler);
+        findViewsByID();
         initRetrofit();
         getProductsFromAPI();
+        searchViewHandle();
     }
+
+    private void searchViewHandle() {
+        searchView.clearFocus();
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterList(newText);
+                return true;
+            }
+        });
+    }
+
+    private void findViewsByID() {
+        recyclerView = findViewById(R.id.recycler);
+        searchView = findViewById(R.id.search_view);
+    }
+
+    private void filterList(String text) {
+        List<Product> filterdProductList = new ArrayList<>();
+        for (Product product: productList){
+            if(product.getTitle().toLowerCase().contains(text.toLowerCase())){
+                filterdProductList.add(product);
+            }
+        }
+
+        if(filterdProductList.isEmpty()){
+            Toast.makeText(this,"No Data found", Toast.LENGTH_SHORT).show();
+        }
+        else{
+            productAdapter.setFilterList(filterdProductList);
+        }
+    }
+
 
     private void initRetrofit() {
         retrofit = new Retrofit.Builder()
@@ -59,6 +106,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewInter
                 for(Product product: products){
                     productList.add(product);
                 }
+                sortArrayByPrice();
                 putDataInRecyclerView(productList);
             }
 
@@ -70,8 +118,17 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewInter
 
     }
 
-    private void putDataInRecyclerView(List<Product> productList) {
-        ProductAdapter productAdapter = new ProductAdapter(this, productList,this);
+    private void sortArrayByPrice() {
+        Collections.sort(productList, new Comparator<Product>() {
+            @Override
+            public int compare(Product product1, Product product2) {
+                return product1.getRating().getRate() > product2.getRating().getRate() ? -1: 0;
+            }
+        });
+    }
+
+        private void putDataInRecyclerView(List<Product> productList) {
+        productAdapter = new ProductAdapter(this, productList,this);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(productAdapter);
